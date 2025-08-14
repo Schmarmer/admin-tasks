@@ -1,0 +1,162 @@
+<Window x:Class="Admin_Tasks.Views.LoginView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:Admin_Tasks.Converters"
+        mc:Ignorable="d"
+        Title="Admin Tasks - Anmeldung" 
+        Height="500" 
+        Width="400"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{DynamicResource PrimaryBackgroundBrush}">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" 
+                Background="{DynamicResource AccentBrush}" 
+                Padding="20">
+            <StackPanel>
+                <TextBlock Text="Admin Tasks" 
+                          FontSize="24" 
+                          FontWeight="Bold" 
+                          Foreground="White" 
+                          HorizontalAlignment="Center"/>
+                <TextBlock Text="Aufgabenverwaltung für Administratoren" 
+                          FontSize="12" 
+                          Foreground="White" 
+                          HorizontalAlignment="Center" 
+                          Opacity="0.9" 
+                          Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Login Form -->
+        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="40,30" 
+                        VerticalAlignment="Center">
+                
+                <!-- Welcome Text -->
+                <TextBlock Text="Willkommen zurück!" 
+                          FontSize="20" 
+                          FontWeight="SemiBold" 
+                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                          HorizontalAlignment="Center" 
+                          Margin="0,0,0,30"/>
+                
+                <!-- Username Field -->
+                <TextBlock Text="Benutzername" 
+                          FontSize="14" 
+                          FontWeight="Medium" 
+                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                          Margin="0,0,0,8"/>
+                <TextBox x:Name="UsernameTextBox"
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" 
+                         Style="{StaticResource ModernTextBoxStyle}"
+                         Margin="0,0,0,20"
+                         TabIndex="1"/>
+                
+                <!-- Password Field -->
+                <TextBlock Text="Passwort" 
+                          FontSize="14" 
+                          FontWeight="Medium" 
+                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                          Margin="0,0,0,8"/>
+                <PasswordBox x:Name="PasswordBox"
+                            Style="{StaticResource ModernPasswordBoxStyle}"
+                            Margin="0,0,0,20"
+                            TabIndex="2"/>
+                
+                <!-- Remember Me -->
+                <CheckBox Content="Angemeldet bleiben" 
+                         IsChecked="{Binding RememberMe}" 
+                         Foreground="{DynamicResource SecondaryTextBrush}" 
+                         Margin="0,0,0,20"
+                         TabIndex="3"/>
+                
+                <!-- Error Message -->
+                <TextBlock Text="{Binding ErrorMessage}" 
+                          Foreground="{DynamicResource DangerBrush}" 
+                          FontSize="12" 
+                          TextWrapping="Wrap" 
+                          HorizontalAlignment="Center" 
+                          Margin="0,0,0,20"
+                          Visibility="{Binding HasError, Converter={x:Static converters:BooleanToVisibilityConverter.Default}}"/>
+                
+                <!-- Login Button -->
+                <Button Content="Anmelden" 
+                        Command="{Binding LoginCommand}"
+                        CommandParameter="{Binding ElementName=PasswordBox}"
+                        Style="{StaticResource ModernButtonStyle}" 
+                        Height="45" 
+                        FontSize="16" 
+                        Margin="0,0,0,15"
+                        TabIndex="4"
+                        IsDefault="True"/>
+                
+                <!-- Clear Button -->
+                <Button Content="Felder leeren" 
+                        Command="{Binding ClearCommand}"
+                        Background="Transparent" 
+                        Foreground="{DynamicResource SecondaryTextBrush}" 
+                        BorderThickness="1" 
+                        BorderBrush="{DynamicResource BorderBrush}" 
+                        Height="35" 
+                        FontSize="14" 
+                        Cursor="Hand"
+                        TabIndex="5">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    CornerRadius="4" 
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource TertiaryBackgroundBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Footer -->
+        <Border Grid.Row="2" 
+                Background="{DynamicResource SecondaryBackgroundBrush}" 
+                Padding="20,15">
+            <StackPanel>
+                <TextBlock Text="Testbenutzer:" 
+                          FontSize="11" 
+                          FontWeight="Medium" 
+                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                          HorizontalAlignment="Center"/>
+                <TextBlock FontSize="10" 
+                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                          HorizontalAlignment="Center" 
+                          Margin="0,5,0,0">
+                    <Run Text="Admin: admin / admin123"/>
+                    <LineBreak/>
+                    <Run Text="Manager: manager / manager123"/>
+                    <LineBreak/>
+                    <Run Text="User: user / user123"/>
+                </TextBlock>
+            </StackPanel>
+        </Border>
+        
+    </Grid>
+</Window>

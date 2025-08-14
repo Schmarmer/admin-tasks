@@ -1,0 +1,477 @@
+<Window x:Class="Admin_Tasks.Views.MainView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:Admin_Tasks.Converters"
+        mc:Ignorable="d"
+        Title="Admin Tasks - Aufgabenverwaltung" 
+        Height="800" 
+        Width="1200"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource PrimaryBackgroundBrush}">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" 
+                Background="{DynamicResource AccentBrush}" 
+                Padding="20,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" 
+                           Orientation="Horizontal" 
+                           VerticalAlignment="Center">
+                    <TextBlock Text="Admin Tasks" 
+                              FontSize="20" 
+                              FontWeight="Bold" 
+                              Foreground="White"/>
+                    <TextBlock Text="{Binding CurrentUser.FirstName, StringFormat='Willkommen, {0}!'}" 
+                              FontSize="14" 
+                              Foreground="White" 
+                              Opacity="0.9" 
+                              Margin="20,0,0,0" 
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+                
+                <!-- Theme Toggle -->
+                <Button Grid.Column="1" 
+                        Content="🌙" 
+                        Command="{Binding ToggleThemeCommand}"
+                        Background="Transparent" 
+                        Foreground="White" 
+                        BorderThickness="1" 
+                        BorderBrush="White" 
+                        Width="40" 
+                        Height="40" 
+                        FontSize="16" 
+                        Margin="0,0,10,0" 
+                        Cursor="Hand" 
+                        ToolTip="Theme wechseln">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    CornerRadius="20">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#33FFFFFF"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                
+                <!-- Logout Button -->
+                <Button Grid.Column="2" 
+                        Content="Abmelden" 
+                        Command="{Binding LogoutCommand}"
+                        Background="Transparent" 
+                        Foreground="White" 
+                        BorderThickness="1" 
+                        BorderBrush="White" 
+                        Padding="15,8" 
+                        FontSize="14" 
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    CornerRadius="4" 
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#33FFFFFF"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+        </Border>
+        
+        <!-- Toolbar -->
+        <Border Grid.Row="1" 
+                Background="{DynamicResource SecondaryBackgroundBrush}" 
+                Padding="20,15" 
+                BorderBrush="{DynamicResource BorderBrush}" 
+                BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Search and Filter -->
+                <StackPanel Grid.Column="0" 
+                           Orientation="Horizontal">
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource ModernTextBoxStyle}" 
+                             Width="300" 
+                             Margin="0,0,15,0">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SearchCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    
+                    <ComboBox SelectedItem="{Binding FilterStatus}" 
+                              Width="150" 
+                              Margin="0,0,15,0" 
+                              Background="{DynamicResource PrimaryBackgroundBrush}" 
+                              Foreground="{DynamicResource PrimaryTextBrush}" 
+                              BorderBrush="{DynamicResource BorderBrush}" 
+                              Padding="12,8">
+                        <ComboBoxItem Content="Alle Aufgaben"/>
+                        <ComboBoxItem Content="Offen"/>
+                        <ComboBoxItem Content="In Bearbeitung"/>
+                        <ComboBoxItem Content="Erledigt"/>
+                    </ComboBox>
+                </StackPanel>
+                
+                <!-- Action Buttons -->
+                <Button Grid.Column="1" 
+                        Content="Neue Aufgabe" 
+                        Command="{Binding CreateTaskCommand}"
+                        Style="{StaticResource ModernButtonStyle}" 
+                        Margin="0,0,10,0"/>
+                
+                <Button Grid.Column="2" 
+                        Content="Bearbeiten" 
+                        Command="{Binding EditTaskCommand}"
+                        Background="{DynamicResource WarningBrush}" 
+                        Style="{StaticResource ModernButtonStyle}" 
+                        Margin="0,0,10,0"/>
+                
+                <Button Grid.Column="3" 
+                        Content="Aktualisieren" 
+                        Command="{Binding RefreshCommand}"
+                        Background="{DynamicResource InfoBrush}" 
+                        Style="{StaticResource ModernButtonStyle}"/>
+            </Grid>
+        </Border>
+        
+        <!-- Main Content -->
+        <Grid Grid.Row="2" 
+              Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Task List -->
+            <Border Grid.Column="0" 
+                    Background="{DynamicResource PrimaryBackgroundBrush}" 
+                    BorderBrush="{DynamicResource BorderBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- List Header -->
+                    <Border Grid.Row="0" 
+                            Background="{DynamicResource TertiaryBackgroundBrush}" 
+                            Padding="20,15" 
+                            CornerRadius="8,8,0,0">
+                        <TextBlock Text="Aufgaben" 
+                                  FontSize="16" 
+                                  FontWeight="SemiBold" 
+                                  Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    </Border>
+                    
+                    <!-- Task ListView -->
+                    <ListView Grid.Row="1" 
+                             ItemsSource="{Binding Tasks}" 
+                             SelectedItem="{Binding SelectedTask}" 
+                             Background="Transparent" 
+                             BorderThickness="0" 
+                             Padding="10">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource SecondaryBackgroundBrush}" 
+                                        BorderBrush="{DynamicResource BorderBrush}" 
+                                        BorderThickness="1" 
+                                        CornerRadius="6" 
+                                        Padding="15" 
+                                        Margin="0,5">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <!-- Title -->
+                                        <TextBlock Grid.Row="0" 
+                                                  Grid.Column="0" 
+                                                  Text="{Binding Title}" 
+                                                  FontSize="14" 
+                                                  FontWeight="SemiBold" 
+                                                  Foreground="{DynamicResource PrimaryTextBrush}" 
+                                                  TextTrimming="CharacterEllipsis"/>
+                                        
+                                        <!-- Status Badge -->
+                                        <Border Grid.Row="0" 
+                                               Grid.Column="1" 
+                                               Background="{Binding Status, Converter={x:Static converters:StatusToBrushConverter.Instance}}" 
+                                               CornerRadius="10" 
+                                               Padding="8,4">
+                                            <TextBlock Text="{Binding Status}" 
+                                                      FontSize="10" 
+                                                      FontWeight="Medium" 
+                                                      Foreground="White"/>
+                                        </Border>
+                                        
+                                        <!-- Description -->
+                                        <TextBlock Grid.Row="1" 
+                                                  Grid.ColumnSpan="2" 
+                                                  Text="{Binding Description}" 
+                                                  FontSize="12" 
+                                                  Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                  TextTrimming="CharacterEllipsis" 
+                                                  MaxHeight="40" 
+                                                  TextWrapping="Wrap" 
+                                                  Margin="0,5,0,0"/>
+                                        
+                                        <!-- Meta Info -->
+                                        <StackPanel Grid.Row="2" 
+                                                   Grid.ColumnSpan="2" 
+                                                   Orientation="Horizontal" 
+                                                   Margin="0,10,0,0">
+                                            <TextBlock Text="Erstellt:" 
+                                                      FontSize="10" 
+                                                      Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:dd.MM.yyyy}'}" 
+                                                      FontSize="10" 
+                                                      Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                      Margin="5,0,15,0"/>
+                                            <TextBlock Text="Zugewiesen:" 
+                                                      FontSize="10" 
+                                                      Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            <TextBlock Text="{Binding AssignedToUser.FirstName, TargetNullValue='Nicht zugewiesen'}" 
+                                                      FontSize="10" 
+                                                      Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                      Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+            
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" 
+                         Background="{DynamicResource BorderBrush}" 
+                         HorizontalAlignment="Stretch"/>
+            
+            <!-- Task Details -->
+            <Border Grid.Column="2" 
+                    Background="{DynamicResource PrimaryBackgroundBrush}" 
+                    BorderBrush="{DynamicResource BorderBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Details Header -->
+                    <Border Grid.Row="0" 
+                            Background="{DynamicResource TertiaryBackgroundBrush}" 
+                            Padding="20,15" 
+                            CornerRadius="8,8,0,0">
+                        <TextBlock Text="Aufgaben-Details" 
+                                  FontSize="16" 
+                                  FontWeight="SemiBold" 
+                                  Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    </Border>
+                    
+                    <!-- Details Content -->
+                    <ScrollViewer Grid.Row="1" 
+                                 Padding="20" 
+                                 VerticalScrollBarVisibility="Auto">
+                        <StackPanel DataContext="{Binding SelectedTask}">
+                            <TextBlock Text="Keine Aufgabe ausgewählt" 
+                                      FontSize="14" 
+                                      Foreground="{DynamicResource SecondaryTextBrush}" 
+                                      HorizontalAlignment="Center" 
+                                      VerticalAlignment="Center" 
+                                      Visibility="{Binding Converter={x:Static converters:NullToVisibilityConverter.Instance}}"/>
+                            
+                            <StackPanel Visibility="{Binding Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}">
+                                <!-- Title -->
+                                <TextBlock Text="Titel" 
+                                          FontSize="12" 
+                                          FontWeight="Medium" 
+                                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                                          Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding Title}" 
+                                          FontSize="16" 
+                                          FontWeight="SemiBold" 
+                                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                                          TextWrapping="Wrap" 
+                                          Margin="0,0,0,20"/>
+                                
+                                <!-- Description -->
+                                <TextBlock Text="Beschreibung" 
+                                          FontSize="12" 
+                                          FontWeight="Medium" 
+                                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                                          Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding Description}" 
+                                          FontSize="14" 
+                                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                                          TextWrapping="Wrap" 
+                                          Margin="0,0,0,20"/>
+                                
+                                <!-- Status -->
+                                <TextBlock Text="Status" 
+                                          FontSize="12" 
+                                          FontWeight="Medium" 
+                                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                                          Margin="0,0,0,5"/>
+                                <Border Background="{Binding Status, Converter={x:Static converters:StatusToBrushConverter.Instance}}" 
+                                       CornerRadius="15" 
+                                       Padding="12,6" 
+                                       HorizontalAlignment="Left" 
+                                       Margin="0,0,0,20">
+                                    <TextBlock Text="{Binding Status}" 
+                                              FontSize="12" 
+                                              FontWeight="Medium" 
+                                              Foreground="White"/>
+                                </Border>
+                                
+                                <!-- Priority -->
+                                <TextBlock Text="Priorität" 
+                                          FontSize="12" 
+                                          FontWeight="Medium" 
+                                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                                          Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding Priority}" 
+                                          FontSize="14" 
+                                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                                          Margin="0,0,0,20"/>
+                                
+                                <!-- Assigned To -->
+                                <TextBlock Text="Zugewiesen an" 
+                                          FontSize="12" 
+                                          FontWeight="Medium" 
+                                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                                          Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding AssignedToUser.FirstName, TargetNullValue='Nicht zugewiesen'}" 
+                                          FontSize="14" 
+                                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                                          Margin="0,0,0,20"/>
+                                
+                                <!-- Dates -->
+                                <TextBlock Text="Erstellt am" 
+                                          FontSize="12" 
+                                          FontWeight="Medium" 
+                                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                                          Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+                                          FontSize="14" 
+                                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                                          Margin="0,0,0,20"/>
+                                
+                                <TextBlock Text="Fällig am" 
+                                          FontSize="12" 
+                                          FontWeight="Medium" 
+                                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                                          Margin="0,0,0,5" 
+                                          Visibility="{Binding DueDate, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}"/>
+                                <TextBlock Text="{Binding DueDate, StringFormat='{}{0:dd.MM.yyyy}'}" 
+                                          FontSize="14" 
+                                          Foreground="{DynamicResource PrimaryTextBrush}" 
+                                          Margin="0,0,0,20" 
+                                          Visibility="{Binding DueDate, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                    
+                    <!-- Action Buttons -->
+                    <Border Grid.Row="2" 
+                            Background="{DynamicResource TertiaryBackgroundBrush}" 
+                            Padding="20,15" 
+                            CornerRadius="0,0,8,8">
+                        <StackPanel Orientation="Horizontal" 
+                                   HorizontalAlignment="Center">
+                            <Button Content="Als erledigt markieren" 
+                                    Command="{Binding CompleteTaskCommand}"
+                                    Background="{DynamicResource SuccessBrush}" 
+                                    Style="{StaticResource ModernButtonStyle}" 
+                                    Margin="0,0,10,0" 
+                                    Visibility="{Binding SelectedTask, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}"/>
+                            
+                            <Button Content="Löschen" 
+                                    Command="{Binding DeleteTaskCommand}"
+                                    Background="{DynamicResource DangerBrush}" 
+                                    Style="{StaticResource ModernButtonStyle}" 
+                                    Visibility="{Binding SelectedTask, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+        
+        <!-- Status Bar -->
+        <Border Grid.Row="3" 
+                Background="{DynamicResource TertiaryBackgroundBrush}" 
+                Padding="20,10" 
+                BorderBrush="{DynamicResource BorderBrush}" 
+                BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" 
+                          Text="{Binding Tasks.Count, StringFormat='Aufgaben gesamt: {0}'}" 
+                          FontSize="12" 
+                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                          VerticalAlignment="Center"/>
+                
+                <TextBlock Grid.Column="1" 
+                          Text="{Binding CurrentUser.Role, StringFormat='Rolle: {0}'}" 
+                          FontSize="12" 
+                          Foreground="{DynamicResource SecondaryTextBrush}" 
+                          VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
