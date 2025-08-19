@@ -8,9 +8,19 @@ public class AdminTasksDbContext : DbContext
     {
     }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ConfigureWarnings(warnings =>
+            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    }
+
     public DbSet<User> Users { get; set; }
     public DbSet<TaskItem> Tasks { get; set; }
     public DbSet<TaskComment> TaskComments { get; set; }
+    public DbSet<TaskAttachment> TaskAttachments { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<TaskCompletionDetails> TaskCompletionDetails { get; set; }
+    public DbSet<TaskCategory> TaskCategories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,16 +34,38 @@ public class AdminTasksDbContext : DbContext
             
             entity.Property(e => e.Role).HasDefaultValue("User");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            
+            // Use different SQL functions based on database provider
+            if (Database.IsNpgsql())
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            }
+            else if (Database.IsSqlite())
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            }
         });
 
         // TaskItem Configuration
         modelBuilder.Entity<TaskItem>(entity =>
         {
             entity.Property(e => e.Status).HasDefaultValue(Models.TaskStatus.Open);
-            entity.Property(e => e.Priority).HasDefaultValue(TaskPriority.Medium);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("datetime('now')");
+            entity.Property(e => e.Priority)
+                  .HasConversion<int>()
+                  .HasDefaultValue(TaskPriority.Medium)
+                  .HasSentinel(TaskPriority.Unspecified);
+            
+            // Use different SQL functions based on database provider
+            if (Database.IsNpgsql())
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+            }
+            else if (Database.IsSqlite())
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("datetime('now')");
+            }
 
             // Relationships
             entity.HasOne(t => t.CreatedByUser)
@@ -50,7 +82,19 @@ public class AdminTasksDbContext : DbContext
         // TaskComment Configuration
         modelBuilder.Entity<TaskComment>(entity =>
         {
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            // Use different SQL functions based on database provider
+            if (Database.IsNpgsql())
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            }
+            else if (Database.IsSqlite())
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            }
+
+            entity.Property(e => e.Type).HasDefaultValue(CommentType.Normal);
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+            entity.Property(e => e.IsEdited).HasDefaultValue(false);
 
             entity.HasOne(tc => tc.Task)
                   .WithMany(t => t.Comments)
@@ -61,7 +105,86 @@ public class AdminTasksDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(tc => tc.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(tc => tc.ParentComment)
+                  .WithMany(pc => pc.Replies)
+                  .HasForeignKey(tc => tc.ParentCommentId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
+
+        // Notification Configuration
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            // Use different SQL functions based on database provider
+            if (Database.IsNpgsql())
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            }
+            else if (Database.IsSqlite())
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            }
+
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+
+            entity.HasOne(n => n.User)
+                  .WithMany()
+                  .HasForeignKey(n => n.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(n => n.Task)
+                  .WithMany()
+                  .HasForeignKey(n => n.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TaskCompletionDetails Configuration
+        modelBuilder.Entity<TaskCompletionDetails>(entity =>
+        {
+            // Use different SQL functions based on database provider
+            if (Database.IsNpgsql())
+            {
+                entity.Property(e => e.CompletedAt).HasDefaultValueSql("NOW()");
+            }
+            else if (Database.IsSqlite())
+            {
+                entity.Property(e => e.CompletedAt).HasDefaultValueSql("datetime('now')");
+            }
+
+            entity.HasOne(tcd => tcd.Task)
+                  .WithOne()
+                  .HasForeignKey<TaskCompletionDetails>(tcd => tcd.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(tcd => tcd.CompletedByUser)
+                  .WithMany()
+                  .HasForeignKey(tcd => tcd.CompletedByUserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // TaskAttachment Configuration
+        modelBuilder.Entity<TaskAttachment>(entity =>
+        {
+            // Use different SQL functions based on database provider
+            if (Database.IsNpgsql())
+            {
+                entity.Property(e => e.UploadedAt).HasDefaultValueSql("NOW()");
+            }
+            else if (Database.IsSqlite())
+            {
+                entity.Property(e => e.UploadedAt).HasDefaultValueSql("datetime('now')");
+            }
+
+            entity.HasOne(ta => ta.Task)
+                  .WithMany(t => t.Attachments)
+                  .HasForeignKey(ta => ta.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ta => ta.User)
+                   .WithMany()
+                   .HasForeignKey(ta => ta.UploadedBy)
+                   .OnDelete(DeleteBehavior.Restrict);
+         });
 
         // Seed Data
         SeedData(modelBuilder);

@@ -6,7 +6,7 @@
         xmlns:converters="clr-namespace:Admin_Tasks.Converters"
         mc:Ignorable="d"
         Title="Admin Tasks - Anmeldung" 
-        Height="500" 
+        Height="750" 
         Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -27,11 +27,11 @@
                 <TextBlock Text="Admin Tasks" 
                           FontSize="24" 
                           FontWeight="Bold" 
-                          Foreground="White" 
+                          Foreground="{DynamicResource AccentTextBrush}" 
                           HorizontalAlignment="Center"/>
                 <TextBlock Text="Aufgabenverwaltung für Administratoren" 
                           FontSize="12" 
-                          Foreground="White" 
+                          Foreground="{DynamicResource AccentTextBrush}" 
                           HorizontalAlignment="Center" 
                           Opacity="0.9" 
                           Margin="0,5,0,0"/>

@@ -1,0 +1,166 @@
+<Window x:Class="Admin_Tasks.Views.CustomFolderDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ordner erstellen" Height="350" Width="450"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource BackgroundBrush}"
+        KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <Style x:Key="ColorRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="ColorBorder" 
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="15"
+                                Width="30" Height="30"
+                                Cursor="Hand">
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ColorBorder" Property="BorderBrush" Value="White" />
+                                <Setter TargetName="ColorBorder" Property="BorderThickness" Value="3" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ColorBorder" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <!-- Titel -->
+        <TextBlock Grid.Row="0" Text="Neuen Ordner erstellen" 
+                   FontSize="18" FontWeight="Bold" 
+                   Foreground="{DynamicResource TextBrush}" 
+                   Margin="0,0,0,20" />
+        
+        <!-- Ordnername -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,15">
+            <TextBlock Text="Ordnername:" 
+                       FontWeight="Medium" 
+                       Foreground="{DynamicResource TextBrush}" 
+                       Margin="0,0,0,5" />
+            <TextBox x:Name="FolderNameTextBox" 
+                     Height="35" 
+                     Padding="10,8" 
+                     FontSize="14"
+                     Background="{DynamicResource InputBackgroundBrush}"
+                     Foreground="{DynamicResource TextBrush}"
+                     BorderBrush="{DynamicResource BorderBrush}"
+                     BorderThickness="1"
+                     Text="{Binding FolderName, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        
+        <!-- Beschreibung -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,15">
+            <TextBlock Text="Beschreibung (optional):" 
+                       FontWeight="Medium" 
+                       Foreground="{DynamicResource TextBrush}" 
+                       Margin="0,0,0,5" />
+            <TextBox x:Name="DescriptionTextBox" 
+                     Height="60" 
+                     Padding="10,8" 
+                     FontSize="14"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"
+                     VerticalScrollBarVisibility="Auto"
+                     Background="{DynamicResource InputBackgroundBrush}"
+                     Foreground="{DynamicResource TextBrush}"
+                     BorderBrush="{DynamicResource BorderBrush}"
+                     BorderThickness="1"
+                     Text="{Binding FolderDescription, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        
+        <!-- Farbe -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,15">
+            <TextBlock Text="Ordnerfarbe:" 
+                       FontWeight="Medium" 
+                       Foreground="{DynamicResource TextBrush}" 
+                       Margin="0,0,0,8" />
+            <WrapPanel>
+                <RadioButton x:Name="ColorBlue" Content="" Width="30" Height="30" Margin="0,0,8,0"
+                             Background="#2196F3" BorderThickness="2" BorderBrush="Transparent"
+                             Style="{StaticResource ColorRadioButtonStyle}" 
+                             IsChecked="True" Tag="#2196F3" />
+                <RadioButton x:Name="ColorGreen" Content="" Width="30" Height="30" Margin="0,0,8,0"
+                             Background="#4CAF50" BorderThickness="2" BorderBrush="Transparent"
+                             Style="{StaticResource ColorRadioButtonStyle}" 
+                             Tag="#4CAF50" />
+                <RadioButton x:Name="ColorOrange" Content="" Width="30" Height="30" Margin="0,0,8,0"
+                             Background="#FF9800" BorderThickness="2" BorderBrush="Transparent"
+                             Style="{StaticResource ColorRadioButtonStyle}" 
+                             Tag="#FF9800" />
+                <RadioButton x:Name="ColorRed" Content="" Width="30" Height="30" Margin="0,0,8,0"
+                             Background="#F44336" BorderThickness="2" BorderBrush="Transparent"
+                             Style="{StaticResource ColorRadioButtonStyle}" 
+                             Tag="#F44336" />
+                <RadioButton x:Name="ColorPurple" Content="" Width="30" Height="30" Margin="0,0,8,0"
+                             Background="#9C27B0" BorderThickness="2" BorderBrush="Transparent"
+                             Style="{StaticResource ColorRadioButtonStyle}" 
+                             Tag="#9C27B0" />
+                <RadioButton x:Name="ColorTeal" Content="" Width="30" Height="30" Margin="0,0,8,0"
+                             Background="#009688" BorderThickness="2" BorderBrush="Transparent"
+                             Style="{StaticResource ColorRadioButtonStyle}" 
+                             Tag="#009688" />
+            </WrapPanel>
+        </StackPanel>
+        
+        <!-- Vorschau -->
+        <StackPanel Grid.Row="4" Margin="0,0,0,20">
+            <TextBlock Text="Vorschau:" 
+                       FontWeight="Medium" 
+                       Foreground="{DynamicResource TextBrush}" 
+                       Margin="0,0,0,8" />
+            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                    BorderBrush="{DynamicResource BorderBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Padding="12,8">
+                <StackPanel Orientation="Horizontal">
+                    <Border x:Name="PreviewColorBorder" Width="12" Height="12" CornerRadius="2" 
+                            Background="#2196F3" Margin="0,0,8,0" />
+                    <TextBlock x:Name="PreviewNameText" Text="Neuer Ordner" 
+                               FontSize="14" 
+                               Foreground="{DynamicResource TextBrush}" 
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="6" Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,20,0,0">
+            <Button Content="Abbrechen" 
+                    Width="100" Height="35" 
+                    Margin="0,0,10,0"
+                    Background="{DynamicResource SecondaryButtonBrush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    Click="Cancel_Click" />
+            <Button Content="Erstellen" 
+                    Width="100" Height="35"
+                    Background="{DynamicResource AccentBrush}"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Click="OK_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -56,6 +56,12 @@ public class TaskService : ITaskService
         task.CreatedAt = DateTime.UtcNow;
         task.UpdatedAt = DateTime.UtcNow;
         
+        // Ensure DueDate is UTC if provided
+        if (task.DueDate.HasValue && task.DueDate.Value.Kind != DateTimeKind.Utc)
+        {
+            task.DueDate = DateTime.SpecifyKind(task.DueDate.Value, DateTimeKind.Utc);
+        }
+        
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
         
@@ -72,7 +78,17 @@ public class TaskService : ITaskService
         existingTask.Description = task.Description;
         existingTask.Status = task.Status;
         existingTask.Priority = task.Priority;
-        existingTask.DueDate = task.DueDate;
+        
+        // Ensure DueDate is UTC if provided
+        if (task.DueDate.HasValue && task.DueDate.Value.Kind != DateTimeKind.Utc)
+        {
+            existingTask.DueDate = DateTime.SpecifyKind(task.DueDate.Value, DateTimeKind.Utc);
+        }
+        else
+        {
+            existingTask.DueDate = task.DueDate;
+        }
+        
         existingTask.AssignedToUserId = task.AssignedToUserId;
         existingTask.UpdatedAt = DateTime.UtcNow;
 
@@ -102,24 +118,48 @@ public class TaskService : ITaskService
 
     public async Task<bool> AssignTaskAsync(int taskId, int userId)
     {
+        System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Starte Zuweisung: TaskId={taskId}, UserId={userId}");
+        
         var task = await _context.Tasks.FindAsync(taskId);
         if (task == null)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Task {taskId} nicht gefunden");
             return false;
+        }
 
+        System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Task gefunden: {task.Title}, aktueller Besitzer: {task.AssignedToUserId}");
+        
         var user = await _context.Users.FindAsync(userId);
         if (user == null || !user.IsActive)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Benutzer {userId} nicht gefunden oder inaktiv");
             return false;
+        }
 
+        System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Benutzer gefunden: {user.Username}, aktiv: {user.IsActive}");
+        
         task.AssignedToUserId = userId;
         task.UpdatedAt = DateTime.UtcNow;
         
         if (task.Status == Models.TaskStatus.Open)
         {
             task.Status = Models.TaskStatus.InProgress;
+            System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Status geändert von Open zu InProgress");
         }
 
-        await _context.SaveChangesAsync();
-        return true;
+        System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Speichere Änderungen in Datenbank...");
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+            System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Erfolgreich gespeichert - Task {taskId} ist jetzt Benutzer {userId} zugewiesen");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TaskService.AssignTaskAsync] Fehler beim Speichern: {ex.Message}");
+            return false;
+        }
     }
 
     public async Task<bool> CompleteTaskAsync(int taskId)
@@ -134,6 +174,37 @@ public class TaskService : ITaskService
 
         await _context.SaveChangesAsync();
         return true;
+    }
+    
+    public async Task<bool> CompleteTaskWithDetailsAsync(TaskItem task, TaskCompletionDetails completionDetails)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        
+        try
+        {
+            // Update the task
+            var existingTask = await _context.Tasks.FindAsync(task.Id);
+            if (existingTask == null)
+                return false;
+            
+            existingTask.Status = task.Status;
+            existingTask.CompletedAt = task.CompletedAt;
+            existingTask.UpdatedAt = task.UpdatedAt;
+            
+            // Add completion details
+            _context.TaskCompletionDetails.Add(completionDetails);
+            
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            System.Diagnostics.Debug.WriteLine($"Error completing task with details: {ex.Message}");
+            return false;
+        }
     }
 
     public async Task<bool> AddCommentAsync(int taskId, int userId, string content)

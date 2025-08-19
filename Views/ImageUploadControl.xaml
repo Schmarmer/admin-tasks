@@ -1,0 +1,159 @@
+<UserControl x:Class="Admin_Tasks.Views.ImageUploadControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="400"
+             AllowDrop="True"
+             Drop="OnDrop"
+             DragEnter="OnDragEnter"
+             DragLeave="OnDragLeave"
+             DragOver="OnDragOver">
+    
+    <UserControl.Resources>
+        <Style x:Key="UploadAreaStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="20" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}" />
+                </Trigger>
+                <DataTrigger Binding="{Binding ElementName=UploadControl, Path=IsDragOver}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="BorderThickness" Value="3" />
+                    <Setter Property="Opacity" Value="0.1" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="UploadIconStyle" TargetType="Path">
+            <Setter Property="Fill" Value="{DynamicResource ForegroundBrush}" />
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="48" />
+            <Setter Property="Stretch" Value="Uniform" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Opacity" Value="0.6" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ElementName=UploadControl, Path=IsDragOver}" Value="True">
+                    <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="Opacity" Value="1" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="UploadTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Opacity" Value="0.8" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ElementName=UploadControl, Path=IsDragOver}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="Opacity" Value="1" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Upload Area -->
+        <Border x:Name="UploadArea" 
+                Grid.Row="0"
+                Style="{StaticResource UploadAreaStyle}"
+                AllowDrop="True"
+                Drop="OnDrop"
+                DragEnter="OnDragEnter"
+                DragLeave="OnDragLeave"
+                DragOver="OnDragOver"
+                MouseLeftButtonDown="OnUploadAreaClick"
+                Cursor="Hand">
+            <StackPanel Orientation="Vertical" 
+                        HorizontalAlignment="Center" 
+                        VerticalAlignment="Center">
+                
+                <!-- Upload Icon -->
+                <Path Style="{StaticResource UploadIconStyle}"
+                      Data="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6L7,11H10V16H14V11H17L12,6Z" />
+                
+                <!-- Upload Text -->
+                <TextBlock x:Name="UploadText"
+                          Style="{StaticResource UploadTextStyle}"
+                          Margin="0,12,0,0">
+                    <Run Text="Bilder hier ablegen oder" />
+                    <LineBreak />
+                    <Run Text="klicken zum Auswählen" FontWeight="SemiBold" />
+                </TextBlock>
+                
+                <!-- Supported Formats -->
+                <TextBlock Text="Unterstützte Formate: JPG, PNG, GIF, BMP, WebP"
+                          Style="{StaticResource UploadTextStyle}"
+                          FontSize="11"
+                          Margin="0,8,0,0"
+                          Opacity="0.6" />
+                
+                <!-- Max File Size -->
+                <TextBlock Text="Maximale Dateigröße: 10 MB"
+                          Style="{StaticResource UploadTextStyle}"
+                          FontSize="11"
+                          Margin="0,4,0,0"
+                          Opacity="0.6" />
+            </StackPanel>
+        </Border>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="1" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Center" 
+                    Margin="0,12,0,0">
+            
+            <Button x:Name="SelectFilesButton"
+                    Content="Dateien auswählen"
+                    Click="OnSelectFilesClick"
+                    Padding="12,6"
+                    Margin="0,0,8,0"
+                    Style="{StaticResource ModernButtonStyle}" />
+            
+            <Button x:Name="PasteButton"
+                    Content="Aus Zwischenablage einfügen"
+                    Click="OnPasteClick"
+                    Padding="12,6"
+                    Margin="8,0,0,0"
+                    Style="{StaticResource ModernButtonStyle}" />
+        </StackPanel>
+
+        <!-- Progress Indicator -->
+        <Grid x:Name="ProgressOverlay"
+              Grid.Row="0"
+              Background="{DynamicResource BackgroundBrush}"
+              Opacity="0.9"
+              Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center" 
+                        VerticalAlignment="Center">
+                <ProgressBar x:Name="UploadProgress"
+                            Width="200"
+                            Height="4"
+                            IsIndeterminate="True"
+                            Style="{DynamicResource ModernProgressBarStyle}" />
+                <TextBlock x:Name="ProgressText"
+                          Text="Bilder werden hochgeladen..."
+                          HorizontalAlignment="Center"
+                          Margin="0,8,0,0"
+                          Foreground="{DynamicResource ForegroundBrush}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

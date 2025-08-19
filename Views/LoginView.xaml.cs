@@ -18,6 +18,9 @@ namespace Admin_Tasks.Views
             // Event-Handler für erfolgreiche Anmeldung
             viewModel.LoginSuccessful += OnLoginSuccessful;
             
+            // Event-Handler für Passwort-Wiederherstellung
+            viewModel.PasswordRestored += OnPasswordRestored;
+            
             // Focus auf Username-Feld setzen
             Loaded += (s, e) => UsernameTextBox.Focus();
             
@@ -35,6 +38,12 @@ namespace Admin_Tasks.Views
             {
                 viewModel.Password = PasswordBox.Password;
             };
+        }
+        
+        private void OnPasswordRestored(object? sender, string password)
+        {
+            // Passwort in die PasswordBox setzen
+            PasswordBox.Password = password;
         }
         
         private void OnLoginSuccessful(object? sender, User user)

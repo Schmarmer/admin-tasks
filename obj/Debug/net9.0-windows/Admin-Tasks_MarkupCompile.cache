@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET9_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 C:\Users\FS\Desktop\C#\Admin-Tasks\App.xaml
-51616888868
+151902460195
 
-24-865604920
-257596076049
-Themes\DarkTheme.xaml;Themes\LightTheme.xaml;Views\LoginView.xaml;Views\MainView.xaml;Views\TaskEditView.xaml;
+7764724230
+290-28863969
+Themes\DarkTheme.xaml;Themes\LightTheme.xaml;Views\AttachmentDisplayControl.xaml;Views\ChatControl.xaml;Views\ChatOverviewView.xaml;Views\CustomFolderDialog.xaml;Views\FolderNameDialog.xaml;Views\ImageUploadControl.xaml;Views\LoginView.xaml;Views\MainView.xaml;Views\NotificationPanel.xaml;Views\TaskCompletionDialog.xaml;Views\TaskDetailView.xaml;Views\TaskEditView.xaml;Views\UserManagementView.xaml;
 
 False
 

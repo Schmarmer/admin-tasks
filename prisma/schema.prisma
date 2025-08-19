@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://fs:Phelomina01@192.168.20.155:5432/admintasks"
+}
+
+model TaskComments {
+  Id              Int           @id(map: "PK_TaskComments") @default(autoincrement())
+  Content         String        @db.VarChar(1000)
+  CreatedAt       DateTime      @default(now()) @db.Timestamptz(6)
+  UpdatedAt       DateTime?     @db.Timestamptz(6)
+  Type            Int           @default(0)
+  IsRead          Boolean       @default(false)
+  IsEdited        Boolean       @default(false)
+  ParentCommentId Int?
+  TaskId          Int
+  UserId          Int
+  Tasks           Tasks         @relation(fields: [TaskId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_TaskComments_Tasks_TaskId")
+  Users           Users         @relation(fields: [UserId], references: [Id], onUpdate: NoAction, map: "FK_TaskComments_Users_UserId")
+  ParentComment   TaskComments? @relation("TaskCommentReplies", fields: [ParentCommentId], references: [Id], onUpdate: NoAction)
+  Replies         TaskComments[] @relation("TaskCommentReplies")
+
+  @@index([TaskId], map: "IX_TaskComments_TaskId")
+  @@index([UserId], map: "IX_TaskComments_UserId")
+  @@index([ParentCommentId], map: "IX_TaskComments_ParentCommentId")
+}
+
+model Tasks {
+  Id                                  Int                     @id(map: "PK_Tasks") @default(autoincrement())
+  Title                               String                  @db.VarChar(200)
+  Description                         String                  @db.VarChar(2000)
+  Status                              Int                     @default(0)
+  Priority                            Int                     @default(2)
+  CreatedAt                           DateTime                @default(now()) @db.Timestamptz(6)
+  DueDate                             DateTime?               @db.Timestamptz(6)
+  CompletedAt                         DateTime?               @db.Timestamptz(6)
+  UpdatedAt                           DateTime                @default(now()) @db.Timestamptz(6)
+  CreatedByUserId                     Int
+  AssignedToUserId                    Int?
+  CategoryId                          Int?
+  TaskComments                        TaskComments[]
+  TaskAttachments                     TaskAttachments[]
+  Notifications                       Notifications[]
+  TaskCompletionDetails               TaskCompletionDetails?
+  TaskCategory                        TaskCategories?         @relation(fields: [CategoryId], references: [Id], onUpdate: NoAction, map: "FK_Tasks_TaskCategories_CategoryId")
+  Users_Tasks_AssignedToUserIdToUsers Users?                  @relation("Tasks_AssignedToUserIdToUsers", fields: [AssignedToUserId], references: [Id], onUpdate: NoAction, map: "FK_Tasks_Users_AssignedToUserId")
+  Users_Tasks_CreatedByUserIdToUsers  Users                   @relation("Tasks_CreatedByUserIdToUsers", fields: [CreatedByUserId], references: [Id], onUpdate: NoAction, map: "FK_Tasks_Users_CreatedByUserId")
+
+  @@index([AssignedToUserId], map: "IX_Tasks_AssignedToUserId")
+  @@index([CreatedByUserId], map: "IX_Tasks_CreatedByUserId")
+  @@index([CategoryId], map: "IX_Tasks_CategoryId")
+}
+
+model Users {
+  Id                                  Int                     @id(map: "PK_Users") @default(autoincrement())
+  Username                            String                  @unique(map: "IX_Users_Username") @db.VarChar(50)
+  Email                               String                  @unique(map: "IX_Users_Email") @db.VarChar(100)
+  PasswordHash                        String
+  Role                                String                  @default("User") @db.VarChar(20)
+  FirstName                           String                  @db.VarChar(100)
+  LastName                            String                  @db.VarChar(100)
+  IsActive                            Boolean                 @default(true)
+  CreatedAt                           DateTime                @default(now()) @db.Timestamptz(6)
+  LastLoginAt                         DateTime?               @db.Timestamptz(6)
+  TaskComments                        TaskComments[]
+  TaskAttachments                     TaskAttachments[]
+  Notifications                       Notifications[]
+  TaskCompletionDetails               TaskCompletionDetails[]
+  Tasks_Tasks_AssignedToUserIdToUsers Tasks[]                 @relation("Tasks_AssignedToUserIdToUsers")
+  Tasks_Tasks_CreatedByUserIdToUsers  Tasks[]                 @relation("Tasks_CreatedByUserIdToUsers")
+}
+
+model TaskAttachments {
+  Id            Int      @id(map: "PK_TaskAttachments") @default(autoincrement())
+  FileName      String   @db.VarChar(255)
+  FilePath      String   @db.VarChar(500)
+  FileSize      Int
+  ContentType   String   @db.VarChar(100)
+  UploadedAt    DateTime @default(now()) @db.Timestamptz(6)
+  TaskId        Int
+  UploadedBy    Int
+  ThumbnailPath String?  @db.VarChar(500)
+  Tasks         Tasks    @relation(fields: [TaskId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_TaskAttachments_Tasks_TaskId")
+  Users         Users    @relation(fields: [UploadedBy], references: [Id], onUpdate: NoAction, map: "FK_TaskAttachments_Users_UploadedBy")
+
+  @@index([TaskId], map: "IX_TaskAttachments_TaskId")
+  @@index([UploadedBy], map: "IX_TaskAttachments_UploadedBy")
+}
+
+model Notifications {
+  Id        Int              @id(map: "PK_Notifications") @default(autoincrement())
+  Title     String           @db.VarChar(200)
+  Message   String           @db.VarChar(1000)
+  Type      Int
+  IsRead    Boolean          @default(false)
+  CreatedAt DateTime         @default(now()) @db.Timestamptz(6)
+  ReadAt    DateTime?        @db.Timestamptz(6)
+  UserId    Int
+  TaskId    Int?
+  Users     Users            @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Notifications_Users_UserId")
+  Tasks     Tasks?           @relation(fields: [TaskId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Notifications_Tasks_TaskId")
+
+  @@index([UserId], map: "IX_Notifications_UserId")
+  @@index([TaskId], map: "IX_Notifications_TaskId")
+}
+
+model TaskCompletionDetails {
+  Id                  Int      @id(map: "PK_TaskCompletionDetails") @default(autoincrement())
+  TaskId              Int      @unique
+  TimeSpentMinutes    Int
+  ConclusionText      String   @db.VarChar(2000)
+  DifficultyRating    Int?
+  SatisfactionRating  Int?
+  AdditionalNotes     String   @db.VarChar(1000)
+  CompletionImagePath String?  @db.VarChar(500)
+  CompletedAt         DateTime @default(now()) @db.Timestamptz(6)
+  CompletedByUserId   Int
+  Tasks               Tasks    @relation(fields: [TaskId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_TaskCompletionDetails_Tasks_TaskId")
+  Users               Users    @relation(fields: [CompletedByUserId], references: [Id], onUpdate: NoAction, map: "FK_TaskCompletionDetails_Users_CompletedByUserId")
+
+  @@index([CompletedByUserId], map: "IX_TaskCompletionDetails_CompletedByUserId")
+}
+
+model TaskCategories {
+  Id          Int      @id(map: "PK_TaskCategories") @default(autoincrement())
+  Name        String   @unique @db.VarChar(100)
+  Description String?  @db.VarChar(500)
+  Color       String?  @db.VarChar(7)
+  CreatedAt   DateTime @default(now()) @db.Timestamptz(6)
+  IsActive    Boolean  @default(true)
+  Tasks       Tasks[]
+}
+
+model EFMigrationsHistory {
+  MigrationId    String @id(map: "PK___EFMigrationsHistory") @db.VarChar(150)
+  ProductVersion String @db.VarChar(32)
+
+  @@map("__EFMigrationsHistory")
+}

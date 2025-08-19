@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Admin_Tasks.Services
 {
@@ -8,5 +9,10 @@ namespace Admin_Tasks.Services
         event EventHandler<bool>? ThemeChanged;
         void ToggleTheme();
         void SetTheme(bool isDarkMode);
+        
+        /// <summary>
+        /// Initialisiert das Theme aus den gespeicherten Einstellungen
+        /// </summary>
+        Task InitializeThemeAsync();
     }
 }

@@ -223,4 +223,125 @@ public class DatabaseService : IDatabaseService
         await _context.TaskComments.AddRangeAsync(sampleComments);
         await _context.SaveChangesAsync();
     }
+    
+    // User Management Methods
+    public async Task<IEnumerable<User>> GetAllUsersAsync()
+    {
+        return await _context.Users
+            .Include(u => u.AssignedTasks)
+            .Include(u => u.CreatedTasks)
+            .OrderBy(u => u.Username)
+            .ToListAsync();
+    }
+    
+    public async Task<User?> GetUserByIdAsync(int userId)
+    {
+        return await _context.Users
+            .Include(u => u.AssignedTasks)
+            .Include(u => u.CreatedTasks)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+    }
+    
+    public async Task<User> CreateUserAsync(User user)
+    {
+        if (user == null)
+            throw new ArgumentNullException(nameof(user));
+            
+        // Überprüfen, ob Benutzername bereits existiert
+        var existingUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Username.ToLower() == user.Username.ToLower());
+            
+        if (existingUser != null)
+            throw new InvalidOperationException($"Benutzername '{user.Username}' ist bereits vergeben.");
+            
+        // Überprüfen, ob E-Mail bereits existiert
+        var existingEmail = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == user.Email.ToLower());
+            
+        if (existingEmail != null)
+            throw new InvalidOperationException($"E-Mail-Adresse '{user.Email}' ist bereits vergeben.");
+            
+        user.CreatedAt = DateTime.UtcNow;
+        
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        
+        return user;
+    }
+    
+    public async Task<User> UpdateUserAsync(User user)
+    {
+        if (user == null)
+            throw new ArgumentNullException(nameof(user));
+            
+        var existingUser = await _context.Users.FindAsync(user.Id);
+        if (existingUser == null)
+            throw new InvalidOperationException($"Benutzer mit ID {user.Id} wurde nicht gefunden.");
+            
+        // Überprüfen, ob Benutzername bereits von anderem Benutzer verwendet wird
+        var duplicateUsername = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id != user.Id && u.Username.ToLower() == user.Username.ToLower());
+            
+        if (duplicateUsername != null)
+            throw new InvalidOperationException($"Benutzername '{user.Username}' ist bereits vergeben.");
+            
+        // Überprüfen, ob E-Mail bereits von anderem Benutzer verwendet wird
+        var duplicateEmail = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id != user.Id && u.Email.ToLower() == user.Email.ToLower());
+            
+        if (duplicateEmail != null)
+            throw new InvalidOperationException($"E-Mail-Adresse '{user.Email}' ist bereits vergeben.");
+            
+        // Eigenschaften aktualisieren
+        existingUser.Username = user.Username;
+        existingUser.Email = user.Email;
+        existingUser.FirstName = user.FirstName;
+        existingUser.LastName = user.LastName;
+        existingUser.Role = user.Role;
+        existingUser.IsActive = user.IsActive;
+        
+        // Passwort nur aktualisieren, wenn es geändert wurde
+        if (!string.IsNullOrEmpty(user.PasswordHash))
+        {
+            existingUser.PasswordHash = user.PasswordHash;
+        }
+        
+        await _context.SaveChangesAsync();
+        
+        return existingUser;
+    }
+    
+    public async Task DeleteUserAsync(int userId)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+            throw new InvalidOperationException($"Benutzer mit ID {userId} wurde nicht gefunden.");
+            
+        // Überprüfen, ob Benutzer noch Aufgaben zugewiesen hat
+        var hasAssignedTasks = await _context.Tasks
+            .AnyAsync(t => t.AssignedToUserId == userId);
+            
+        if (hasAssignedTasks)
+            throw new InvalidOperationException("Benutzer kann nicht gelöscht werden, da ihm noch Aufgaben zugewiesen sind.");
+            
+        // Überprüfen, ob Benutzer Aufgaben erstellt hat
+        var hasCreatedTasks = await _context.Tasks
+            .AnyAsync(t => t.CreatedByUserId == userId);
+            
+        if (hasCreatedTasks)
+        {
+            // Ersteller-Referenzen auf Admin (ID 1) setzen statt Benutzer zu löschen
+            var createdTasks = await _context.Tasks
+                .Where(t => t.CreatedByUserId == userId)
+                .ToListAsync();
+                
+            foreach (var task in createdTasks)
+            {
+                task.CreatedByUserId = 1; // Assign to admin (assuming admin has ID 1)
+            }
+        }
+        
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+    }
 }
