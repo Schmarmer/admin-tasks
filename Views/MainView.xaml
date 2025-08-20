@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:Admin_Tasks.Converters"
+        xmlns:models="clr-namespace:Admin_Tasks.Models"
         mc:Ignorable="d"
         Title="Admin Tasks - Aufgabenverwaltung"
         Height="800" Width="1400"
@@ -18,6 +19,8 @@
         <converters:TaskAccentBrushConverter x:Key="TaskAccentBrushConverter" />
         <converters:TaskBackgroundBrushConverter x:Key="TaskBackgroundBrushConverter" />
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <converters:PriorityDisplayConverter x:Key="PriorityDisplayConverter" />
+        <converters:StatusDisplayConverter x:Key="StatusDisplayConverter" />
         <converters:FolderTaskCountConverter x:Key="FolderTaskCountConverter" />
         <converters:TaskUserPairConverter x:Key="TaskUserPairConverter" />
         
@@ -200,6 +203,9 @@
                 <Button Content="💬 Chat-Übersicht" Style="{StaticResource ModernButtonStyle}" 
                         Command="{Binding OpenChatOverviewCommand}" Margin="0,0,12,0" 
                         Padding="16,8" />
+                <Button Content="📰 News" Style="{StaticResource ModernButtonStyle}" 
+                        Command="{Binding OpenNewsCommand}" Margin="0,0,12,0" 
+                        Padding="16,8" />
                 <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="12,0" />
                 <TextBlock Text="{Binding FilteredTasks.Count, StringFormat=\{0\} Aufgaben}" 
                            FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" 
@@ -379,25 +385,168 @@
                     
                     <!-- Filter und Suche -->
                     <Grid Grid.Row="1" Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         
-                        <TextBox Grid.Column="0" Style="{StaticResource ModernTextBoxStyle}" 
-                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                                 Tag="Aufgaben durchsuchen..." Margin="0,0,8,0" />
+                        <!-- Erste Zeile: Suchfeld und Status-Filter -->
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBox Grid.Column="0" Style="{StaticResource ModernTextBoxStyle}" 
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                     Tag="Aufgaben durchsuchen..." Margin="0,0,8,0" />
+                            
+                            <ComboBox Grid.Column="1" Width="120" Height="32" 
+                                       ItemsSource="{Binding FilterStatuses}"
+                                       SelectedItem="{Binding FilterStatus}" 
+                                       DisplayMemberPath="DisplayName"
+                                       Background="{DynamicResource BackgroundBrush}" 
+                                       BorderBrush="{DynamicResource BorderBrush}" 
+                                       Foreground="{DynamicResource TextBrush}" />
+                        </Grid>
                         
-                        <ComboBox Grid.Column="1" Width="120" Height="32" 
-                                  SelectedItem="{Binding SelectedStatusFilter}" 
-                                  Background="{DynamicResource BackgroundBrush}" 
-                                  BorderBrush="{DynamicResource BorderBrush}" 
-                                  Foreground="{DynamicResource TextBrush}">
-                            <ComboBoxItem Content="Alle Status" />
-                            <ComboBoxItem Content="Offen" />
-                            <ComboBoxItem Content="In Bearbeitung" />
-                            <ComboBoxItem Content="Abgeschlossen" />
-                        </ComboBox>
+                        <!-- Zweite Zeile: Erweiterte Filter -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Prioritäts-Filter -->
+                            <ComboBox Grid.Column="0" Height="32" Margin="0,0,4,0"
+                                      ItemsSource="{Binding FilterPriorities}"
+                                      SelectedItem="{Binding FilterPriority}"
+                                      DisplayMemberPath="DisplayName"
+                                      Background="{DynamicResource BackgroundBrush}" 
+                                      BorderBrush="{DynamicResource BorderBrush}" 
+                                      Foreground="{DynamicResource TextBrush}" />
+                            
+                            <!-- Zugewiesene Person Filter -->
+                            <ComboBox Grid.Column="1" Height="32" Margin="4,0,4,0"
+                                      ItemsSource="{Binding FilterUsers}"
+                                      SelectedItem="{Binding FilterAssignedUser}"
+                                      DisplayMemberPath="FullName"
+                                      Background="{DynamicResource BackgroundBrush}" 
+                                      BorderBrush="{DynamicResource BorderBrush}" 
+                                      Foreground="{DynamicResource TextBrush}" />
+                            
+                            <!-- Bald ablaufend Toggle Button -->
+                            <ToggleButton Grid.Column="2" Content="Bald ablaufend" 
+                                          IsChecked="{Binding FilterDueSoon}"
+                                          VerticalAlignment="Center" Margin="4,0,4,0"
+                                          Height="32" Padding="8,4">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border x:Name="MainBorder"
+                                                            Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                                            CornerRadius="4"
+                                                            Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter x:Name="ContentPresenter"
+                                                                          HorizontalAlignment="Center" 
+                                                                          VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <!-- Normal state -->
+                                                        <Trigger Property="IsChecked" Value="False">
+                                                            <Setter TargetName="MainBorder" Property="Background" Value="Transparent"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                        </Trigger>
+                                                        <!-- Checked state -->
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="MainBorder" Property="Background" Value="#4A9EFF"/>
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Setter TargetName="MainBorder" Property="BorderBrush" Value="#4A9EFF"/>
+                                                        </Trigger>
+                                                        <!-- Hover effect -->
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="MainBorder" Property="BorderBrush" Value="#4A9EFF"/>
+                                                        </Trigger>
+                                                        <!-- Checked + Hover -->
+                                                        <MultiTrigger>
+                                                            <MultiTrigger.Conditions>
+                                                                <Condition Property="IsChecked" Value="True"/>
+                                                                <Condition Property="IsMouseOver" Value="True"/>
+                                                            </MultiTrigger.Conditions>
+                                                            <Setter TargetName="MainBorder" Property="Background" Value="#6BB6FF"/>
+                                                        </MultiTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                            
+                            <!-- Sortierung Label -->
+                            <TextBlock Grid.Column="3" Text="Sortierung:" 
+                                       VerticalAlignment="Center" Margin="8,0,4,0"
+                                       Foreground="{DynamicResource TextBrush}" />
+                            
+                            <!-- Sortierungs-ComboBox -->
+                            <ComboBox Grid.Column="4" Height="32" Margin="4,0,0,0"
+                                      ItemsSource="{Binding SortOptions}"
+                                      SelectedItem="{Binding SelectedSortOption}"
+                                      Background="{DynamicResource BackgroundBrush}" 
+                                      BorderBrush="{DynamicResource BorderBrush}" 
+                                      Foreground="{DynamicResource TextBrush}" />
+                            
+                            <!-- Filter zurücksetzen Button -->
+                            <Button Grid.Column="5" Content="🔄 Filter zurücksetzen" 
+                                    Command="{Binding ClearSearchCommand}"
+                                    Height="32" Margin="8,0,0,0" Padding="8,4"
+                                    Background="{DynamicResource BackgroundBrush}" 
+                                    BorderBrush="{DynamicResource BorderBrush}" 
+                                    Foreground="{DynamicResource TextBrush}"
+                                    Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="MainBorder"
+                                                            Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="4"
+                                                            Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                                          VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="MainBorder" Property="BorderBrush" Value="#4A9EFF"/>
+                                                            <Setter TargetName="MainBorder" Property="Background" Value="#F0F8FF"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="MainBorder" Property="Background" Value="#E6F3FF"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </Grid>
                     </Grid>
                     
                     <!-- Aufgaben-Liste -->
@@ -442,49 +591,27 @@
                         
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource TaskItemStyle}">
-                                    <Border.ContextMenu>
-                                        <ContextMenu>
-                                            <!-- Only show for unassigned tasks -->
-                                            <ContextMenu.Visibility>
-                                                <Binding Path="PlacementTarget.DataContext.AssignedToUserId"
-                                                                  RelativeSource="{RelativeSource AncestorType=ContextMenu}"
-                                                                  Converter="{StaticResource NullToVisibilityConverter}" />
-                                            </ContextMenu.Visibility>
+                                <Border Style="{StaticResource TaskItemStyle}" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                                     <Border.ContextMenu>
+                                         <ContextMenu>
+                                             <!-- Only show for unassigned tasks -->
+                                             <ContextMenu.Visibility>
+                                                 <Binding Path="PlacementTarget.DataContext.AssignedToUserId"
+                                                                   RelativeSource="{RelativeSource AncestorType=ContextMenu}"
+                                                                   Converter="{StaticResource NullToVisibilityConverter}" />
+                                             </ContextMenu.Visibility>
 
-                                            <!-- Self-assign -->
-                                            <MenuItem Header="Übernehmen"
-                                                               Command="{Binding PlacementTarget.DataContext.SelfAssignTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                               CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                             <!-- Self-assign -->
+                                             <MenuItem Header="Übernehmen"
+                                                                Command="{Binding PlacementTarget.Tag.SelfAssignTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
-                                            <!-- Assign to specific user submenu -->
-                                            <MenuItem Header="Übergeben an...">
-                                                         <MenuItem.Visibility>
-                                                             <Binding Path="PlacementTarget.DataContext.IsManagerOrAdmin"
-                                                                      RelativeSource="{RelativeSource AncestorType=ContextMenu}"
-                                                                      Converter="{StaticResource BooleanToVisibilityConverter}" />
-                                                         </MenuItem.Visibility>
-                                                         <MenuItem.ItemsSource>
-                                                             <Binding Path="PlacementTarget.DataContext.Users"
-                                                                      RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
-                                                         </MenuItem.ItemsSource>
-                                                         <MenuItem.ItemContainerStyle>
-                                                             <Style TargetType="MenuItem">
-                                                                 <Setter Property="Header" Value="{Binding FullName}" />
-                                                                 <Setter Property="Command" Value="{Binding PlacementTarget.DataContext.AssignTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                                                 <Setter Property="CommandParameter">
-                                                                     <Setter.Value>
-                                                                         <MultiBinding Converter="{StaticResource TaskUserPairConverter}">
-                                                                             <Binding Path="PlacementTarget.DataContext" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
-                                                                             <Binding />
-                                                                         </MultiBinding>
-                                                                     </Setter.Value>
-                                                                 </Setter>
-                                                             </Style>
-                                                         </MenuItem.ItemContainerStyle>
-                                                     </MenuItem>
-                                                 </ContextMenu>
-                                             </Border.ContextMenu>
+                                             <!-- Assign to specific user dialog -->
+                                             <MenuItem Header="Übergeben an..."
+                                                                Command="{Binding PlacementTarget.Tag.ShowAssignTaskDialogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                  </ContextMenu>
+                                              </Border.ContextMenu>
                                     <!-- Overlay für besitzlose Tasks -->
                                     <Border.Background>
                                         <Binding Path="." Converter="{StaticResource TaskBackgroundBrushConverter}" />
@@ -566,11 +693,13 @@
                                                    TextWrapping="Wrap" Margin="0,8,0,0" 
                                                    MaxHeight="60" TextTrimming="CharacterEllipsis" />
                                         
-                                        <!-- Footer mit Priorität und Datum -->
+                                        <!-- Footer mit Priorität, Accept-Button und Datum -->
                                         <Grid Grid.Row="3" Margin="0,12,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             
@@ -580,7 +709,87 @@
                                                            FontWeight="SemiBold" Foreground="White" />
                                             </Border>
                                             
-                                            <TextBlock Grid.Column="2" Text="{Binding CreatedAt, StringFormat=dd.MM.yyyy}" 
+                                            <!-- Accept Button -->
+                                            <Button Grid.Column="2" Content="✓ Annehmen" 
+                                                    FontSize="10" FontWeight="SemiBold"
+                                                    Background="{DynamicResource AccentBrush}" 
+                                                    Foreground="White" 
+                                                    BorderThickness="0" 
+                                                    Padding="8,4" 
+                                                    Margin="0,0,8,0"
+                                                    Command="{Binding DataContext.AcceptTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}">
+                                                <Button.Visibility>
+                                                    <MultiBinding Converter="{StaticResource TaskAcceptVisibilityConverter}">
+                                                        <Binding Path="." />
+                                                        <Binding Path="DataContext.CurrentUser" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                    </MultiBinding>
+                                                </Button.Visibility>
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Cursor" Value="Hand" />
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="{TemplateBinding Background}" 
+                                                                            CornerRadius="4" 
+                                                                            Padding="{TemplateBinding Padding}">
+                                                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                                                          VerticalAlignment="Center" />
+                                                                    </Border>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                            
+                                            <!-- Forward Button -->
+                                            <Button Grid.Column="3" Content="↗ Weiterleiten" 
+                                                    FontSize="10" FontWeight="SemiBold"
+                                                    Background="{DynamicResource WarningBrush}" 
+                                                    Foreground="White" 
+                                                    BorderThickness="0" 
+                                                    Padding="8,4" 
+                                                    Margin="0,0,8,0"
+                                                    Click="ForwardButton_Click"
+                                                    Tag="{Binding}">
+                                                <Button.Visibility>
+                                                    <MultiBinding Converter="{StaticResource TaskForwardVisibilityConverter}">
+                                                        <Binding Path="." />
+                                                        <Binding Path="DataContext.CurrentUser" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                    </MultiBinding>
+                                                </Button.Visibility>
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Cursor" Value="Hand" />
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="{TemplateBinding Background}" 
+                                                                            CornerRadius="4" 
+                                                                            Padding="{TemplateBinding Padding}">
+                                                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                                                          VerticalAlignment="Center" />
+                                                                    </Border>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource WarningHoverBrush}" />
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                            
+                                            <TextBlock Grid.Column="4" Text="{Binding CreatedAt, StringFormat=dd.MM.yyyy}" 
                                                        FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" 
                                                        VerticalAlignment="Center" />
                                         </Grid>

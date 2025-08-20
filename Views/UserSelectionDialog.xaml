@@ -1,0 +1,109 @@
+<Window x:Class="Admin_Tasks.Views.UserSelectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Benutzer auswählen" 
+        Height="400" Width="350"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource BackgroundBrush}">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Wählen Sie einen Benutzer aus:" 
+                   FontSize="14" FontWeight="SemiBold" 
+                   Foreground="{DynamicResource PrimaryTextBrush}"
+                   Margin="0,0,0,15" />
+        
+        <!-- User List -->
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" 
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" 
+                CornerRadius="8">
+            <ListView x:Name="UserListView" 
+                      ItemsSource="{Binding Users}"
+                      SelectedItem="{Binding SelectedUser}"
+                      Background="Transparent" 
+                      BorderThickness="0"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- User Avatar -->
+                            <Border Grid.Column="0" Width="32" Height="32" 
+                                    Background="{DynamicResource AccentBrush}" 
+                                    CornerRadius="16" Margin="0,0,12,0">
+                                <TextBlock Text="{Binding Username, Converter={StaticResource FirstLetterConverter}}" 
+                                           FontSize="14" FontWeight="Bold" 
+                                           Foreground="White" 
+                                           HorizontalAlignment="Center" 
+                                           VerticalAlignment="Center" />
+                            </Border>
+                            
+                            <!-- User Info -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Username}" 
+                                           FontSize="13" FontWeight="SemiBold" 
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                                <TextBlock Text="{Binding Role}" 
+                                           FontSize="11" 
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                            </StackPanel>
+                            
+                            <!-- Status Indicator -->
+                            <Ellipse Grid.Column="2" Width="8" Height="8" 
+                                     Fill="{DynamicResource SuccessBrush}" 
+                                     VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
+        </Border>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" 
+                    HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Abbrechen" Width="80" Height="32" 
+                    Background="{DynamicResource SurfaceBrush}" 
+                    Foreground="{DynamicResource PrimaryTextBrush}" 
+                    BorderBrush="{DynamicResource BorderBrush}" 
+                    BorderThickness="1" 
+                    Margin="0,0,10,0" 
+                    Click="CancelButton_Click" />
+            <Button Content="Weiterleiten" Width="100" Height="32" 
+                    Background="{DynamicResource AccentBrush}" 
+                    Foreground="White" 
+                    BorderThickness="0" 
+                    IsEnabled="{Binding SelectedUser, Converter={StaticResource NullToBooleanConverter}}" 
+                    Click="ForwardButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

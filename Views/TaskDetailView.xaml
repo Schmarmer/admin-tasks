@@ -261,44 +261,7 @@
                     </StackPanel>
                 </Border>
                 
-                <!-- Weiterleitung Section -->
-                <Border Style="{StaticResource DetailSectionStyle}" 
-                        Visibility="{Binding CanForwardOrTakeTask, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <StackPanel>
-                        <TextBlock Text="🔄 Weiterleitung" FontSize="16" FontWeight="SemiBold" 
-                                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12" />
-                        
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            
-                            <ComboBox Grid.Column="0" x:Name="AssignToComboBox" 
-                                      Height="36" Margin="0,0,12,0"
-                                      Background="{DynamicResource BackgroundBrush}" 
-                                      BorderBrush="{DynamicResource BorderBrush}" 
-                                      Foreground="{DynamicResource TextBrush}"
-                                      ItemsSource="{Binding AvailableUsers}"
-                                      SelectedItem="{Binding SelectedUserForForwarding}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Username}" />
-                                            <TextBlock Text=" (" Visibility="{Binding Role, Converter={StaticResource NotNullToVisibilityConverter}}" />
-                                            <TextBlock Text="{Binding Role}" Visibility="{Binding Role, Converter={StaticResource NotNullToVisibilityConverter}}" />
-                                            <TextBlock Text=")" Visibility="{Binding Role, Converter={StaticResource NotNullToVisibilityConverter}}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            
-                            <Button Grid.Column="1" Content="Weiterleiten" 
-                                    Style="{StaticResource ModernButtonStyle}" 
-                                    Click="ForwardTask_Click" Width="120" Height="36" />
-                        </Grid>
-                    </StackPanel>
-                </Border>
+
             </StackPanel>
         </ScrollViewer>
 
@@ -307,6 +270,9 @@
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" 
                 Padding="24,16">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="👍 Annehmen" Style="{StaticResource ModernButtonStyle}" 
+                        Click="AcceptTask_Click" Margin="0,0,12,0" Padding="16,8" 
+                        Visibility="{Binding CanAcceptTask, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 <Button Content="✏️ Bearbeiten" Style="{StaticResource ModernButtonStyle}" 
                         Click="EditTask_Click" Margin="0,0,12,0" Padding="16,8" />
                 <Button Content="✅ Abschließen" Style="{StaticResource SuccessButtonStyle}" 

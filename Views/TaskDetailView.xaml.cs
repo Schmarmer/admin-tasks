@@ -24,10 +24,14 @@ namespace Admin_Tasks.Views
         public TaskDetailViewModel ViewModel { get; private set; }
         private AttachmentDisplayControl _attachmentDisplayControl;
         private ChatControl _chatControl;
+        private readonly IAuthenticationService _authService;
         
         public TaskDetailView(TaskItem task)
         {
             InitializeComponent();
+            
+            // Services aus DI Container holen
+            _authService = App.ServiceProvider.GetRequiredService<IAuthenticationService>();
             
             // ViewModel aus DI Container holen und Task setzen
             ViewModel = App.ServiceProvider.GetRequiredService<TaskDetailViewModel>();
@@ -283,16 +287,43 @@ namespace Admin_Tasks.Views
             }
         }
         
+
+        
         private async void ForwardTask_Click(object sender, RoutedEventArgs e)
         {
-            if (ViewModel.Task != null && ViewModel.SelectedUserForForwarding != null)
+            if (ViewModel.Task != null)
             {
-                var selectedUser = ViewModel.SelectedUserForForwarding;
-                var userName = selectedUser.Id == 0 ? "Ohne Besitzer" : $"{selectedUser.FirstName} {selectedUser.LastName}";
-                
+                var userSelectionDialog = new UserSelectionDialog(ViewModel.AvailableUsers, _authService.CurrentUser);
+                userSelectionDialog.Owner = this;
+
+                if (userSelectionDialog.ShowDialog() == true)
+                {
+                    var selectedUser = userSelectionDialog.SelectedUser;
+                    if (selectedUser != null)
+                    {
+                        ViewModel.SelectedUserForForwarding = selectedUser;
+                        var success = await ViewModel.ForwardTaskAsync();
+                        if (success)
+                        {
+                            TaskUpdated?.Invoke(ViewModel.Task);
+                            MessageBox.Show($"Aufgabe '{ViewModel.Task.Title}' wurde an {selectedUser.Username} weitergeleitet.", "Erfolg", MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Fehler beim Weiterleiten der Aufgabe.", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+            }
+        }
+
+        private async void AcceptTask_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.Task != null)
+            {
                 var result = MessageBox.Show(
-                    $"Möchten Sie die Aufgabe '{ViewModel.Task.Title}' an {userName} weiterleiten?",
-                    "Aufgabe weiterleiten",
+                    $"Möchten Sie die Aufgabe '{ViewModel.Task.Title}' annehmen?\n\nDie Aufgabe wird dann in Ihren 'Meine Aufgaben' Ordner verschoben.",
+                    "Aufgabe annehmen",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
                 
@@ -300,32 +331,42 @@ namespace Admin_Tasks.Views
                 {
                     try
                     {
-                        await ViewModel.ForwardTaskAsync();
-                        TaskUpdated?.Invoke(ViewModel.Task);
+                        var taskService = App.ServiceProvider.GetRequiredService<ITaskService>();
+                        var authService = App.ServiceProvider.GetRequiredService<IAuthenticationService>();
                         
-                        MessageBox.Show(
-                            $"Die Aufgabe wurde erfolgreich an {userName} weitergeleitet.",
-                            "Erfolg",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
+                        var success = await taskService.AcceptTaskAsync(ViewModel.Task.Id, authService.CurrentUser.Id);
+                        
+                        if (success)
+                        {
+                            // Task wurde erfolgreich angenommen
+                            ViewModel.Task.Status = Models.TaskStatus.InProgress;
+                            ViewModel.RefreshTask();
+                            TaskUpdated?.Invoke(ViewModel.Task);
+                            
+                            MessageBox.Show(
+                                "Die Aufgabe wurde erfolgreich angenommen und befindet sich jetzt in 'Meine Aufgaben'.",
+                                "Erfolg",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Information);
+                        }
+                        else
+                        {
+                            MessageBox.Show(
+                                "Fehler beim Annehmen der Aufgabe. Möglicherweise haben Sie keine Berechtigung.",
+                                "Fehler",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                        }
                     }
-                    catch (System.Exception ex)
+                    catch (Exception ex)
                     {
                         MessageBox.Show(
-                            $"Fehler beim Weiterleiten der Aufgabe: {ex.Message}",
+                            $"Fehler beim Annehmen der Aufgabe: {ex.Message}",
                             "Fehler",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                     }
                 }
-            }
-            else
-            {
-                MessageBox.Show(
-                    "Bitte wählen Sie einen Benutzer aus, an den die Aufgabe weitergeleitet werden soll.",
-                    "Auswahl erforderlich",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
             }
         }
         

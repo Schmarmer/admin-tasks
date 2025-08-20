@@ -71,6 +71,10 @@ namespace Admin_Tasks.ViewModels
         public bool CanForwardOrTakeTask => _authService.CurrentUser?.Role is "Admin" or "Manager" || 
                                             (_task?.AssignedToUserId == null); // Allow taking "Ohne Besitzer" tasks
         
+        public bool CanAcceptTask => _task?.AssignedToUserId == _authService.CurrentUser?.Id && 
+                                    _task?.Status != TaskStatus.InProgress && 
+                                    _task?.Status != TaskStatus.Completed;
+        
         public bool CanDeleteAttachments => _authService.CurrentUser?.Role is "Admin" or "Manager" || 
                                            _task?.CreatedByUserId == _authService.CurrentUser?.Id;
         

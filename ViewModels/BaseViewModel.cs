@@ -35,6 +35,12 @@ public abstract class BaseViewModel : ObservableObject
             OnBusyChanged();
             await operation();
         }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BaseViewModel.ExecuteAsync] Exception: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[BaseViewModel.ExecuteAsync] StackTrace: {ex.StackTrace}");
+            throw; // Re-throw to maintain original behavior
+        }
         finally
         {
             IsBusy = false;
@@ -52,6 +58,12 @@ public abstract class BaseViewModel : ObservableObject
             IsBusy = true;
             OnBusyChanged();
             return await operation();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BaseViewModel.ExecuteAsync<T>] Exception: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[BaseViewModel.ExecuteAsync<T>] StackTrace: {ex.StackTrace}");
+            throw; // Re-throw to maintain original behavior
         }
         finally
         {

@@ -14,6 +14,14 @@ public interface INotificationService
     Task<bool> DeleteNotificationAsync(int notificationId);
     Task<int> GetUnreadNotificationCountAsync(int userId);
     
+    // News-spezifische Methoden
+    Task<List<Notification>> GetNewsForUserAsync(int userId, bool includeRead = true, int limit = 100);
+    Task<List<Notification>> GetTaskRelatedNewsAsync(int userId, bool includeRead = true);
+    Task<List<Notification>> GetMessageRelatedNewsAsync(int userId, bool includeRead = true);
+    Task<bool> MarkNotificationAsUnreadAsync(int notificationId);
+    Task<List<Notification>> SearchNotificationsAsync(int userId, string searchTerm, bool includeRead = true);
+    Task<Dictionary<NotificationType, int>> GetNotificationStatisticsAsync(int userId);
+    
     // Automatic Notifications
     Task NotifyTaskAssignedAsync(int taskId, int assignedUserId, int assignedByUserId);
     Task NotifyTaskCompletedAsync(int taskId, int completedByUserId);

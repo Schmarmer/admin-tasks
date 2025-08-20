@@ -1,0 +1,266 @@
+<UserControl x:Class="Admin_Tasks.Views.NewsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             Background="{DynamicResource PrimaryBackgroundBrush}"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:Admin_Tasks.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800"
+             Loaded="NewsView_Loaded"
+             KeyDown="NewsView_KeyDown">
+    
+    <UserControl.Resources>
+        <!-- Converter -->
+        <converters:NotificationTypeToIconConverter x:Key="NotificationTypeToIconConverter" />
+        <converters:RelativeTimeConverter x:Key="RelativeTimeConverter" />
+        <converters:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter" />
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        
+        <!-- News Item Style -->
+        <Style x:Key="NewsItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource NewsCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="Black" Direction="270" ShadowDepth="2" Opacity="0.3" BlurRadius="8"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource NewsHoverBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="{DynamicResource ColorBlue400}" Direction="270" ShadowDepth="3" Opacity="0.4" BlurRadius="12"/>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Unread News Style -->
+        <Style x:Key="UnreadNewsStyle" TargetType="Border" BasedOn="{StaticResource NewsItemStyle}">
+            <Setter Property="BorderBrush" Value="{DynamicResource UnreadIndicatorBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Background" Value="{DynamicResource AccentBackgroundBrush}" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="{DynamicResource ColorBlue400}" Direction="270" ShadowDepth="4" Opacity="0.5" BlurRadius="16"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- News Type Icon Style -->
+        <Style x:Key="NewsIconStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        
+        <!-- Header Style -->
+        <Style x:Key="HeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
+            <Setter Property="Margin" Value="0,0,0,20" />
+        </Style>
+        
+        <!-- Filter Button Style -->
+        <Style x:Key="FilterButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <!-- CornerRadius wird über Template gesetzt -->
+            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}" />
+                </Trigger>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="Active">
+                    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="📰 News &amp; Benachrichtigungen" 
+                   Style="{StaticResource HeaderStyle}" />
+        
+        <!-- Filter Buttons -->
+        <StackPanel Grid.Row="1" 
+                    Orientation="Horizontal" 
+                    Margin="0,0,0,16">
+            <Button Content="Alle" 
+                    Style="{StaticResource FilterButtonStyle}"
+                    Command="{Binding ShowAllNewsCommand}"
+                    Tag="{Binding ShowAllNews, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <Button Content="Ungelesen" 
+                    Style="{StaticResource FilterButtonStyle}"
+                    Command="{Binding ShowUnreadOnlyCommand}"
+                    Tag="{Binding ShowUnreadOnly, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <Button Content="Tasks" 
+                    Style="{StaticResource FilterButtonStyle}"
+                    Command="{Binding ShowTaskNewsCommand}"
+                    Tag="{Binding ShowTaskNews, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <Button Content="Nachrichten" 
+                    Style="{StaticResource FilterButtonStyle}"
+                    Command="{Binding ShowMessageNewsCommand}"
+                    Tag="{Binding ShowMessageNews, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        </StackPanel>
+        
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right"
+                    Margin="0,0,0,16">
+            <Button Content="🔄 Aktualisieren" 
+                    Command="{Binding RefreshCommand}"
+                    Style="{StaticResource FilterButtonStyle}" />
+            <Button Content="✓ Alle als gelesen markieren" 
+                    Command="{Binding MarkAllAsReadCommand}"
+                    Style="{StaticResource FilterButtonStyle}"
+                    Visibility="{Binding HasUnreadNews, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        </StackPanel>
+        
+        <!-- Loading Indicator -->
+        <Grid Grid.Row="3" 
+              Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel HorizontalAlignment="Center" 
+                        VerticalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" 
+                             Width="200" 
+                             Height="4" 
+                             Margin="0,0,0,16"
+                             Background="{DynamicResource BorderBrush}"
+                             Foreground="{DynamicResource AccentBrush}" />
+                <TextBlock Text="Lade Benachrichtigungen..." 
+                           HorizontalAlignment="Center" 
+                           Foreground="{DynamicResource ForegroundBrush}" />
+            </StackPanel>
+        </Grid>
+        
+        <!-- News List -->
+        <ScrollViewer Grid.Row="3" 
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}">
+            <ItemsControl ItemsSource="{Binding FilteredNews}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{Binding IsRead, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter={StaticResource NewsItemStyle}, FallbackValue={StaticResource UnreadNewsStyle}}"
+                                MouseLeftButtonUp="NewsItem_Click"
+                                MouseRightButtonUp="NewsItem_RightClick"
+                                Tag="{Binding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- News Type Icon -->
+                                <Border Grid.Column="0" 
+                                        Background="{DynamicResource AccentBackgroundBrush}"
+                                        CornerRadius="20"
+                                        Width="40" 
+                                        Height="40"
+                                        Margin="0,0,16,0">
+                                    <TextBlock Text="{Binding Type, Converter={StaticResource NotificationTypeToIconConverter}}" 
+                                               Style="{StaticResource NewsIconStyle}" />
+                                </Border>
+                                
+                                <!-- News Content -->
+                                <StackPanel Grid.Column="1">
+                                    <!-- Title -->
+                                    <TextBlock Text="{Binding Title}" 
+                                               FontSize="16" 
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource NewsTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,4" />
+                                    
+                                    <!-- Message -->
+                                    <TextBlock Text="{Binding Message}" 
+                                               FontSize="14"
+                                               Foreground="{DynamicResource NewsSecondaryTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,8" />
+                                    
+                                    <!-- Task Info -->
+                                    <StackPanel Orientation="Horizontal"
+                                                Visibility="{Binding Task, Converter={StaticResource NotNullToVisibilityConverter}}">
+                                        <TextBlock Text="📋" 
+                                                   FontSize="12"
+                                                   Margin="0,0,4,0" />
+                                        <TextBlock Text="{Binding Task.Title}" 
+                                                   FontSize="12"
+                                                   FontWeight="Medium"
+                                                   Foreground="{DynamicResource AccentBrush}" />
+                                    </StackPanel>
+                                </StackPanel>
+                                
+                                <!-- Time and Actions -->
+                                <StackPanel Grid.Column="2" 
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Top">
+                                    <!-- Time -->
+                                    <TextBlock Text="{Binding CreatedAt, Converter={StaticResource RelativeTimeConverter}}" 
+                                               FontSize="12"
+                                               Foreground="{DynamicResource NewsTimestampBrush}"
+                                               HorizontalAlignment="Right"
+                                               Margin="0,0,0,8" />
+                                    
+                                    <!-- Unread Indicator -->
+                                    <Ellipse Width="8" 
+                                             Height="8" 
+                                             Fill="{DynamicResource AccentBrush}"
+                                             HorizontalAlignment="Right"
+                                             Visibility="{Binding IsRead, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        
+        <!-- Empty State -->
+        <StackPanel Grid.Row="3" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center"
+                    Visibility="{Binding HasNews, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}">
+            <TextBlock Text="📭" 
+                       FontSize="48" 
+                       HorizontalAlignment="Center" 
+                       Margin="0,0,0,16" />
+            <TextBlock Text="Keine Benachrichtigungen vorhanden" 
+                       FontSize="16" 
+                       Foreground="{DynamicResource NewsSecondaryTextBrush}"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</UserControl>

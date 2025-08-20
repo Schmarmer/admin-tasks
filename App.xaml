@@ -22,8 +22,11 @@
             <converters:TaskBackgroundBrushConverter x:Key="TaskBackgroundBrushConverter" />
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
             <converters:TaskUserPairConverter x:Key="TaskUserPairConverter" />
+            <converters:TaskAcceptVisibilityConverter x:Key="TaskAcceptVisibilityConverter" />
+            <converters:TaskForwardVisibilityConverter x:Key="TaskForwardVisibilityConverter" />
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
+            <converters:NullToBooleanConverter x:Key="NullToBooleanConverter" />
             <converters:BooleanToStringConverter x:Key="BooleanToStringConverter" />
             <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
             <converters:FirstLetterConverter x:Key="FirstLetterConverter" />

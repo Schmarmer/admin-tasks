@@ -16,6 +16,7 @@
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter"/>
+        <converters:PriorityDisplayConverter x:Key="PriorityDisplayConverter"/>
     </Window.Resources>
     
     <Grid>
@@ -142,15 +143,17 @@
                                            Margin="8,0,0,0"/>
                             </StackPanel>
                             <ComboBox SelectedItem="{Binding Priority}"
+                                      ItemsSource="{Binding TaskPriorities}"
                                       Background="{DynamicResource SecondaryBackgroundBrush}"
                                       Foreground="{DynamicResource PrimaryTextBrush}"
                                       BorderBrush="{DynamicResource BorderBrush}"
                                       Padding="12,8"
                                       FontSize="14">
-                                <ComboBoxItem Content="Niedrig"/>
-                                <ComboBoxItem Content="Normal"/>
-                                <ComboBoxItem Content="Hoch"/>
-                                <ComboBoxItem Content="Kritisch"/>
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource PriorityDisplayConverter}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
                             </ComboBox>
                         </StackPanel>
                     </Border>

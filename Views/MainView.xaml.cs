@@ -30,6 +30,7 @@ namespace Admin_Tasks.Views
             viewModel.TaskEditRequested += OnTaskEditRequested;
             viewModel.TaskCreateRequested += OnTaskCreateRequested;
             viewModel.ChatOverviewRequested += OnChatOverviewRequested;
+            viewModel.NewsRequested += OnNewsRequested;
         }
         
         private void OnLogoutRequested(object? sender, EventArgs e)
@@ -324,6 +325,38 @@ namespace Admin_Tasks.Views
             }
         }
         
+        private async void OnNewsRequested(object? sender, EventArgs e)
+        {
+            try
+            {
+                var newsView = _serviceProvider.GetRequiredService<NewsView>();
+                
+                // ViewModel initialisieren
+                if (newsView.DataContext is NewsViewModel newsViewModel)
+                {
+                    newsViewModel.RefreshCommand.Execute(null);
+                }
+                
+                var newsWindow = new Window
+                {
+                    Title = "📰 News - Benachrichtigungen",
+                    Content = newsView,
+                    Owner = this,
+                    Width = 1000,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Background = Application.Current.Resources["BackgroundBrush"] as Brush
+                };
+                
+                newsWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Fehler beim Öffnen der News-Seite: {ex.Message}", 
+                               "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
         private void OnTaskDetailsRequestedFromChat(object? sender, int taskId)
         {
             try
@@ -463,6 +496,22 @@ namespace Admin_Tasks.Views
             }
             while (current != null);
             return null;
+        }
+        
+        private async void ForwardButton_Click(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("[MainView] ForwardButton_Click aufgerufen");
+            
+            if (sender is Button button && button.Tag is TaskItem task && DataContext is MainViewModel viewModel)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainView] Task gefunden: {task.Title}, ID: {task.Id}");
+                var result = await viewModel.ShowForwardTaskDialogAsync(task);
+                System.Diagnostics.Debug.WriteLine($"[MainView] Weiterleitung Ergebnis: {result}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[MainView] Sender, Tag oder DataContext ist null/falsch");
+            }
         }
         
         protected override void OnClosed(EventArgs e)

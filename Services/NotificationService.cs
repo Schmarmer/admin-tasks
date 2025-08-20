@@ -5,23 +5,27 @@ using System.Threading.Tasks;
 using Admin_Tasks.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using TaskStatus = Admin_Tasks.Models.TaskStatus;
 
 namespace Admin_Tasks.Services;
 
 public class NotificationService : INotificationService
 {
-    private readonly AdminTasksDbContext _context;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IHubContext<ChatHub>? _hubContext;
 
-    public NotificationService(AdminTasksDbContext context, IHubContext<ChatHub>? hubContext = null)
+    public NotificationService(IServiceProvider serviceProvider, IHubContext<ChatHub>? hubContext = null)
     {
-        _context = context;
+        _serviceProvider = serviceProvider;
         _hubContext = hubContext;
     }
 
     public async Task<Notification> CreateNotificationAsync(int userId, string title, string message, NotificationType type, int? taskId = null)
     {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
         var notification = new Notification
         {
             UserId = userId,
@@ -32,17 +36,17 @@ public class NotificationService : INotificationService
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync();
+        context.Notifications.Add(notification);
+        await context.SaveChangesAsync();
 
         // Load navigation properties
-        await _context.Entry(notification)
+        await context.Entry(notification)
             .Reference(n => n.User)
             .LoadAsync();
 
         if (taskId.HasValue)
         {
-            await _context.Entry(notification)
+            await context.Entry(notification)
                 .Reference(n => n.Task)
                 .LoadAsync();
         }
@@ -55,7 +59,10 @@ public class NotificationService : INotificationService
 
     public async Task<List<Notification>> GetNotificationsForUserAsync(int userId, bool includeRead = false, int limit = 50)
     {
-        var query = _context.Notifications
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var query = context.Notifications
             .Include(n => n.Task)
             .Where(n => n.UserId == userId);
 
@@ -72,7 +79,10 @@ public class NotificationService : INotificationService
 
     public async Task<List<Notification>> GetUnreadNotificationsForUserAsync(int userId)
     {
-        return await _context.Notifications
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        return await context.Notifications
             .Include(n => n.Task)
             .Where(n => n.UserId == userId && !n.IsRead)
             .OrderByDescending(n => n.CreatedAt)
@@ -81,7 +91,10 @@ public class NotificationService : INotificationService
 
     public async Task<bool> MarkNotificationAsReadAsync(int notificationId)
     {
-        var notification = await _context.Notifications
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var notification = await context.Notifications
             .FirstOrDefaultAsync(n => n.Id == notificationId);
 
         if (notification == null)
@@ -90,13 +103,16 @@ public class NotificationService : INotificationService
         notification.IsRead = true;
         notification.ReadAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> MarkAllNotificationsAsReadAsync(int userId)
     {
-        var notifications = await _context.Notifications
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var notifications = await context.Notifications
             .Where(n => n.UserId == userId && !n.IsRead)
             .ToListAsync();
 
@@ -106,37 +122,181 @@ public class NotificationService : INotificationService
             notification.ReadAt = DateTime.UtcNow;
         }
 
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteNotificationAsync(int notificationId)
     {
-        var notification = await _context.Notifications
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var notification = await context.Notifications
             .FirstOrDefaultAsync(n => n.Id == notificationId);
 
         if (notification == null)
             return false;
 
-        _context.Notifications.Remove(notification);
-        await _context.SaveChangesAsync();
+        context.Notifications.Remove(notification);
+        await context.SaveChangesAsync();
         return true;
     }
 
     public async Task<int> GetUnreadNotificationCountAsync(int userId)
     {
-        return await _context.Notifications
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        return await context.Notifications
             .CountAsync(n => n.UserId == userId && !n.IsRead);
+    }
+
+    // News-spezifische Methoden
+    public async Task<List<Notification>> GetNewsForUserAsync(int userId, bool includeRead = true, int limit = 100)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var query = context.Notifications
+            .Include(n => n.Task)
+            .Include(n => n.User)
+            .Where(n => n.UserId == userId);
+
+        if (!includeRead)
+        {
+            query = query.Where(n => !n.IsRead);
+        }
+
+        return await query
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<List<Notification>> GetTaskRelatedNewsAsync(int userId, bool includeRead = true)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var taskTypes = new[] 
+        {
+            NotificationType.TaskAssigned,
+            NotificationType.TaskCompleted,
+            NotificationType.TaskForwarded,
+            NotificationType.TaskStatusChanged
+        };
+
+        var query = context.Notifications
+            .Include(n => n.Task)
+            .Include(n => n.User)
+            .Where(n => n.UserId == userId && taskTypes.Contains(n.Type));
+
+        if (!includeRead)
+        {
+            query = query.Where(n => !n.IsRead);
+        }
+
+        return await query
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<List<Notification>> GetMessageRelatedNewsAsync(int userId, bool includeRead = true)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var messageTypes = new[] 
+        {
+            NotificationType.TaskCommentAdded
+        };
+
+        var query = context.Notifications
+            .Include(n => n.Task)
+            .Include(n => n.User)
+            .Where(n => n.UserId == userId && messageTypes.Contains(n.Type));
+
+        if (!includeRead)
+        {
+            query = query.Where(n => !n.IsRead);
+        }
+
+        return await query
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<bool> MarkNotificationAsUnreadAsync(int notificationId)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var notification = await context.Notifications
+            .FirstOrDefaultAsync(n => n.Id == notificationId);
+
+        if (notification == null)
+            return false;
+
+        notification.IsRead = false;
+        notification.ReadAt = null;
+
+        await context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<List<Notification>> SearchNotificationsAsync(int userId, string searchTerm, bool includeRead = true)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return await GetNewsForUserAsync(userId, includeRead);
+
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var searchLower = searchTerm.ToLower();
+        
+        var query = context.Notifications
+            .Include(n => n.Task)
+            .Include(n => n.User)
+            .Where(n => n.UserId == userId &&
+                       (n.Title.ToLower().Contains(searchLower) ||
+                        n.Message.ToLower().Contains(searchLower) ||
+                        (n.Task != null && n.Task.Title.ToLower().Contains(searchLower))));
+
+        if (!includeRead)
+        {
+            query = query.Where(n => !n.IsRead);
+        }
+
+        return await query
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<Dictionary<NotificationType, int>> GetNotificationStatisticsAsync(int userId)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var stats = await context.Notifications
+            .Where(n => n.UserId == userId)
+            .GroupBy(n => n.Type)
+            .Select(g => new { Type = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Type, x => x.Count);
+
+        return stats;
     }
 
     // Automatic Notification Methods
     public async Task NotifyTaskAssignedAsync(int taskId, int assignedUserId, int assignedByUserId)
     {
-        var task = await _context.Tasks
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var task = await context.Tasks
             .Include(t => t.CreatedByUser)
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
-        var assignedByUser = await _context.Users
+        var assignedByUser = await context.Users
             .FirstOrDefaultAsync(u => u.Id == assignedByUserId);
 
         if (task != null && assignedByUser != null)
@@ -153,12 +313,15 @@ public class NotificationService : INotificationService
 
     public async Task NotifyTaskCompletedAsync(int taskId, int completedByUserId)
     {
-        var task = await _context.Tasks
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var task = await context.Tasks
             .Include(t => t.CreatedByUser)
             .Include(t => t.AssignedToUser)
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
-        var completedByUser = await _context.Users
+        var completedByUser = await context.Users
             .FirstOrDefaultAsync(u => u.Id == completedByUserId);
 
         if (task != null && completedByUser != null)
@@ -194,10 +357,13 @@ public class NotificationService : INotificationService
 
     public async Task NotifyTaskForwardedAsync(int taskId, int fromUserId, int toUserId)
     {
-        var task = await _context.Tasks
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var task = await context.Tasks
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
-        var fromUser = await _context.Users
+        var fromUser = await context.Users
             .FirstOrDefaultAsync(u => u.Id == fromUserId);
 
         if (task != null && fromUser != null)
@@ -214,12 +380,15 @@ public class NotificationService : INotificationService
 
     public async Task NotifyTaskStatusChangedAsync(int taskId, TaskStatus oldStatus, TaskStatus newStatus, int changedByUserId)
     {
-        var task = await _context.Tasks
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var task = await context.Tasks
             .Include(t => t.CreatedByUser)
             .Include(t => t.AssignedToUser)
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
-        var changedByUser = await _context.Users
+        var changedByUser = await context.Users
             .FirstOrDefaultAsync(u => u.Id == changedByUserId);
 
         if (task != null && changedByUser != null)
@@ -257,12 +426,15 @@ public class NotificationService : INotificationService
 
     public async Task NotifyTaskCommentAddedAsync(int taskId, int commentUserId, string commentContent)
     {
-        var task = await _context.Tasks
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var task = await context.Tasks
             .Include(t => t.CreatedByUser)
             .Include(t => t.AssignedToUser)
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
-        var commentUser = await _context.Users
+        var commentUser = await context.Users
             .FirstOrDefaultAsync(u => u.Id == commentUserId);
 
         if (task != null && commentUser != null)
@@ -301,7 +473,10 @@ public class NotificationService : INotificationService
 
     public async Task NotifyTaskDueDateApproachingAsync(int taskId)
     {
-        var task = await _context.Tasks
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var task = await context.Tasks
             .Include(t => t.AssignedToUser)
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
@@ -321,7 +496,10 @@ public class NotificationService : INotificationService
 
     public async Task NotifyTaskOverdueAsync(int taskId)
     {
-        var task = await _context.Tasks
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        var task = await context.Tasks
             .Include(t => t.AssignedToUser)
             .Include(t => t.CreatedByUser)
             .FirstOrDefaultAsync(t => t.Id == taskId);
@@ -397,14 +575,17 @@ public class NotificationService : INotificationService
 
     public async Task CleanupOldNotificationsAsync(int daysToKeep = 30)
     {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
         var cutoffDate = DateTime.UtcNow.AddDays(-daysToKeep);
         
-        var oldNotifications = await _context.Notifications
+        var oldNotifications = await context.Notifications
             .Where(n => n.CreatedAt < cutoffDate && n.IsRead)
             .ToListAsync();
 
-        _context.Notifications.RemoveRange(oldNotifications);
-        await _context.SaveChangesAsync();
+        context.Notifications.RemoveRange(oldNotifications);
+        await context.SaveChangesAsync();
     }
 
     private static string GetStatusDisplayText(TaskStatus status)
@@ -421,7 +602,10 @@ public class NotificationService : INotificationService
 
     public async Task<IEnumerable<Notification>> GetUserNotificationsAsync(int userId)
     {
-        return await _context.Notifications
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AdminTasksDbContext>();
+        
+        return await context.Notifications
             .Where(n => n.UserId == userId)
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();

@@ -78,6 +78,7 @@ public partial class App : Application
             services.AddTransient<UserManagementViewModel>();
             services.AddTransient<ChatViewModel>();
             services.AddSingleton<ChatOverviewViewModel>();
+            services.AddTransient<NewsViewModel>();
 
                 // Views registrieren
             services.AddTransient<LoginView>();
@@ -90,6 +91,8 @@ public partial class App : Application
                 new TaskEditView(provider.GetRequiredService<TaskEditViewModel>()));
             services.AddSingleton<ChatOverviewView>(provider => 
                 new ChatOverviewView(provider.GetRequiredService<ChatOverviewViewModel>()));
+            services.AddTransient<NewsView>(provider => 
+                new NewsView(provider.GetRequiredService<NewsViewModel>()));
             })
             .Build();
 

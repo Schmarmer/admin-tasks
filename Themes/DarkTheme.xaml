@@ -58,6 +58,15 @@
 
     <!-- Other -->
     <SolidColorBrush x:Key="ShadowBrush" Color="{StaticResource ShadowColor}"/>
+    
+    <!-- News-specific Brushes -->
+    <SolidColorBrush x:Key="AccentBackgroundBrush" Color="{StaticResource ColorBlue400}" Opacity="0.15"/>
+    <SolidColorBrush x:Key="UnreadIndicatorBrush" Color="{StaticResource ColorBlue400}"/>
+    <SolidColorBrush x:Key="NewsCardBrush" Color="{StaticResource ColorGray800}"/>
+    <SolidColorBrush x:Key="NewsHoverBrush" Color="{StaticResource ColorGray700}" Opacity="0.7"/>
+    <SolidColorBrush x:Key="NewsTextBrush" Color="{StaticResource ColorGray100}"/>
+    <SolidColorBrush x:Key="NewsSecondaryTextBrush" Color="{StaticResource ColorGray200}" Opacity="0.8"/>
+    <SolidColorBrush x:Key="NewsTimestampBrush" Color="{StaticResource ColorGray200}" Opacity="0.6"/>
 
     <!-- Legacy Aliases for Compatibility -->
     <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="{StaticResource ColorGray900}"/>

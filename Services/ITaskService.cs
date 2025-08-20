@@ -12,7 +12,10 @@ public interface ITaskService
     Task<bool> UpdateTaskAsync(TaskItem task);
     Task<bool> DeleteTaskAsync(int taskId);
     Task<bool> AssignTaskAsync(int taskId, int userId);
+    Task<bool> AcceptTaskAsync(int taskId, int userId);
+    Task<bool> ForwardTaskAsync(int taskId, int newAssignedUserId, int forwardingUserId);
     Task<bool> CompleteTaskAsync(int taskId);
+    Task<bool> CompleteTaskAsync(int taskId, int completedByUserId);
     Task<bool> CompleteTaskWithDetailsAsync(TaskItem task, TaskCompletionDetails completionDetails);
     Task<bool> AddCommentAsync(int taskId, int userId, string content);
     Task<IEnumerable<TaskComment>> GetTaskCommentsAsync(int taskId);
